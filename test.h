@@ -9,6 +9,11 @@ int foo(char *a);
 
 void bar();
 
+
+//I'm not adjacent!
+
+void missing_adjacent_comment();
+
 /// This flag is set whenever the argument list is being changed and calling a
 
 /// function that might trigger an autocommand.
