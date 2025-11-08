@@ -33,7 +33,7 @@ def find(sourcecode: bytes) -> list[UncommentedDeclaration]:
         if (
             previous_node is None
             or previous_node.type != "comment"
-            or previous_node.start_point.row + 1 != func_decl.start_point.row
+            or previous_node.end_point.row + 1 != func_decl.start_point.row
         ):
             assert func_decl.text is not None
             found.append(
