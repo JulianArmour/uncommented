@@ -32,6 +32,26 @@ class TestUncommentedFuncDeclPositive(unittest.TestCase):
         self.assertIn("function_with_docs_inline", found[0].source)
 
 
+class TestUncommentedInlineFuncDefPositive(unittest.TestCase):
+    def test_find_inline_definition_without_docs(self):
+        src = """\
+        inline void inline_function_without_docs() {}
+        """
+        found = uncommented.find(src.encode())
+        self.assertEqual(len(found), 1)
+        self.assertIn("inline_function_without_docs", found[0].source)
+
+    def test_find_inline_definition_with_non_adjacent_docs(self):
+        src = """\
+        /// This is not adjacent
+
+        inline void inline_function_with_non_adjacent_docs() {}
+        """
+        found = uncommented.find(src.encode())
+        self.assertEqual(len(found), 1)
+        self.assertIn("inline_function_with_non_adjacent_docs", found[0].source)
+
+
 class TestUncommentedFuncDeclNegative(unittest.TestCase):
     """Tests for uncommented.find function to ensure documented function declarations are not found."""
 
@@ -74,6 +94,26 @@ class TestUncommentedFuncDeclNegative(unittest.TestCase):
         * docs for this function!
         */
         int typical_slashstarstar_multiline_comment(char *a);
+        """
+        found = uncommented.find(src.encode())
+        self.assertEqual(len(found), 0)
+
+
+class TestUncommentedInlineFuncDefNegative(unittest.TestCase):
+    def test_find_inline_definition_with_docs(self):
+        src = """\
+        /// This is documented
+        inline void inline_function_with_docs() {}
+        """
+        found = uncommented.find(src.encode())
+        self.assertEqual(len(found), 0)
+
+    def test_find_typical_slashstarstar_multiline_comment_inline_def(self):
+        src = """\
+        /**
+        * docs for this inline function!
+        */
+        inline int typical_slashstarstar_multiline_comment_inline_def(char *a) { return 0; }
         """
         found = uncommented.find(src.encode())
         self.assertEqual(len(found), 0)

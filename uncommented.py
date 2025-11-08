@@ -10,7 +10,13 @@ from tree_sitter import Language, Parser, Query, QueryCursor
 
 _cpp_lang = Language(tscpp.language())
 _parser = Parser(_cpp_lang)
-_query = Query(_cpp_lang, "(declaration (function_declarator)) @function.declaration")
+_query = Query(
+    _cpp_lang,
+    """\
+    (declaration (function_declarator)) @function.declaration
+    (function_definition (storage_class_specifier "inline")) @function.definition.inline
+    """,
+)
 
 
 class UncommentedDeclaration(NamedTuple):
@@ -28,7 +34,9 @@ def find(sourcecode: bytes) -> list[UncommentedDeclaration]:
     qc = QueryCursor(_query)
     for matches in qc.matches(tree.root_node):
         _, captures = matches
-        func_decl = captures["function.declaration"][0]
+        assert len(captures) == 1, "Only 1 capture per pattern is supported."
+        _, nodes = next(iter(captures.items()))
+        func_decl = nodes[0]  # there can only be one
         previous_node = func_decl.prev_named_sibling
         if (
             previous_node is None
