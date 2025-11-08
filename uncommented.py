@@ -10,14 +10,13 @@ from tree_sitter import Language, Parser, Query, QueryCursor
 
 _cpp_lang = Language(tscpp.language())
 _parser = Parser(_cpp_lang)
-_query = Query(
-    _cpp_lang,
-    "(declaration (function_declarator)) @function.declaration"
-)
+_query = Query(_cpp_lang, "(declaration (function_declarator)) @function.declaration")
+
 
 class UncommentedDeclaration(NamedTuple):
     lineno: int
     source: str
+
 
 def find(sourcecode: bytes) -> list[UncommentedDeclaration]:
     """
@@ -31,20 +30,26 @@ def find(sourcecode: bytes) -> list[UncommentedDeclaration]:
         _, captures = matches
         func_decl = captures["function.declaration"][0]
         previous_node = func_decl.prev_named_sibling
-        if (previous_node is None
+        if (
+            previous_node is None
             or previous_node.type != "comment"
             or previous_node.start_point.row + 1 != func_decl.start_point.row
         ):
             assert func_decl.text is not None
-            found.append(UncommentedDeclaration(func_decl.start_point.row, func_decl.text.decode()))
+            found.append(
+                UncommentedDeclaration(
+                    func_decl.start_point.row, func_decl.text.decode()
+                )
+            )
     return found
 
 
 def main():
-    argParser = ArgumentParser(description="Find and display commented/uncommented function declarations")
+    argParser = ArgumentParser(
+        description="Find and display commented/uncommented function declarations"
+    )
     argParser.add_argument("file", help="Path to the file to analyze.")
     args = argParser.parse_args()
-
 
     with open(args.file, "rb") as f:
         file_b = f.read()

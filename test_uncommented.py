@@ -1,6 +1,7 @@
 import unittest
 import uncommented
 
+
 class TestUncommented(unittest.TestCase):
     SAMPLE_SRC = """\
     ///Hi I am on the first line...
@@ -45,13 +46,11 @@ class TestUncommented(unittest.TestCase):
         }
         found = uncommented.find(TestUncommented.SAMPLE_SRC.encode())
         what_be_found = set(
-            func for decl in found
-                 for func in must_be_found
-                 if func in decl.source
+            func for decl in found for func in must_be_found if func in decl.source
         )
         self.assertSetEqual(what_be_found, must_be_found)
         self.assertEqual(len(found), len(must_be_found))
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()
