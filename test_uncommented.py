@@ -32,26 +32,6 @@ class TestUncommentedFuncDeclPositive(unittest.TestCase):
         self.assertIn("function_with_docs_inline", found[0].source)
 
 
-class TestUncommentedInlineFuncDefPositive(unittest.TestCase):
-    def test_find_inline_definition_without_docs(self):
-        src = """\
-        inline void inline_function_without_docs() {}
-        """
-        found = uncommented.find(src.encode())
-        self.assertEqual(len(found), 1)
-        self.assertIn("inline_function_without_docs", found[0].source)
-
-    def test_find_inline_definition_with_non_adjacent_docs(self):
-        src = """\
-        /// This is not adjacent
-
-        inline void inline_function_with_non_adjacent_docs() {}
-        """
-        found = uncommented.find(src.encode())
-        self.assertEqual(len(found), 1)
-        self.assertIn("inline_function_with_non_adjacent_docs", found[0].source)
-
-
 class TestUncommentedFuncDeclNegative(unittest.TestCase):
     """Tests for uncommented.find function to ensure documented function declarations are not found."""
 
@@ -99,6 +79,26 @@ class TestUncommentedFuncDeclNegative(unittest.TestCase):
         self.assertEqual(len(found), 0)
 
 
+class TestUncommentedInlineFuncDefPositive(unittest.TestCase):
+    def test_find_inline_definition_without_docs(self):
+        src = """\
+        inline void inline_function_without_docs() {}
+        """
+        found = uncommented.find(src.encode())
+        self.assertEqual(len(found), 1)
+        self.assertIn("inline_function_without_docs", found[0].source)
+
+    def test_find_inline_definition_with_non_adjacent_docs(self):
+        src = """\
+        /// This is not adjacent
+
+        inline void inline_function_with_non_adjacent_docs() {}
+        """
+        found = uncommented.find(src.encode())
+        self.assertEqual(len(found), 1)
+        self.assertIn("inline_function_with_non_adjacent_docs", found[0].source)
+
+
 class TestUncommentedInlineFuncDefNegative(unittest.TestCase):
     def test_find_inline_definition_with_docs(self):
         src = """\
@@ -114,6 +114,50 @@ class TestUncommentedInlineFuncDefNegative(unittest.TestCase):
         * docs for this inline function!
         */
         inline int typical_slashstarstar_multiline_comment_inline_def(char *a) { return 0; }
+        """
+        found = uncommented.find(src.encode())
+        self.assertEqual(len(found), 0)
+
+
+class TestUncommentedMacroFunctionPositive(unittest.TestCase):
+    def test_find_macro_function_without_docs(self):
+        src = """\
+        #define MY_FUNC(x) ((x) * 2)
+        """
+        found = uncommented.find(src.encode())
+        self.assertEqual(len(found), 1)
+        self.assertIn("MY_FUNC", found[0].source)
+
+
+class TestUncommentedMacroFunctionNegative(unittest.TestCase):
+    def test_find_macro_function_without_docs(self):
+        src = """\
+        /** This function macro does the thing!*/
+        #define MY_MACRO_FUNC(x) ((x) * 2)
+        """
+        found = uncommented.find(src.encode())
+        self.assertEqual(len(found), 0)
+
+
+class CppClassMembers(unittest.TestCase):
+    def test_undocumented_public_method_decl(self):
+        src = """\
+        class MyClass {
+        public:
+            void undocumented_method();
+        };
+        """
+        found = uncommented.find(src.encode())
+        self.assertEqual(len(found), 1)
+        self.assertIn("undocumented_method", found[0].source)
+
+    def test_documented_public_method_decl(self):
+        src = """\
+        class MyClass {
+        public:
+            /// This is documented
+            void documented_method();
+        };
         """
         found = uncommented.find(src.encode())
         self.assertEqual(len(found), 0)

@@ -14,7 +14,12 @@ _query = Query(
     _cpp_lang,
     """\
     (declaration (function_declarator)) @function.declaration
+
     (function_definition (storage_class_specifier "inline")) @function.definition.inline
+
+    (field_declaration (function_declarator)) @function.member_declaration
+
+    (preproc_function_def) @macro.func_def
     """,
 )
 
