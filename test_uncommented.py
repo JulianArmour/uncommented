@@ -79,8 +79,8 @@ class TestUncommentedFuncDeclNegative(unittest.TestCase):
         self.assertEqual(len(found), 0)
 
 
-class TestUncommentedInlineFuncDefPositive(unittest.TestCase):
-    def test_find_inline_definition_without_docs(self):
+class InlineFunctionDefinitions(unittest.TestCase):
+    def test_undocumented(self):
         src = """\
         inline void inline_function_without_docs() {}
         """
@@ -88,7 +88,7 @@ class TestUncommentedInlineFuncDefPositive(unittest.TestCase):
         self.assertEqual(len(found), 1)
         self.assertIn("inline_function_without_docs", found[0].source)
 
-    def test_find_inline_definition_with_non_adjacent_docs(self):
+    def test_non_adjacent_documentation(self):
         src = """\
         /// This is not adjacent
 
@@ -98,9 +98,7 @@ class TestUncommentedInlineFuncDefPositive(unittest.TestCase):
         self.assertEqual(len(found), 1)
         self.assertIn("inline_function_with_non_adjacent_docs", found[0].source)
 
-
-class TestUncommentedInlineFuncDefNegative(unittest.TestCase):
-    def test_find_inline_definition_with_docs(self):
+    def test_documented_trippleslash(self):
         src = """\
         /// This is documented
         inline void inline_function_with_docs() {}
@@ -108,7 +106,7 @@ class TestUncommentedInlineFuncDefNegative(unittest.TestCase):
         found = uncommented.find(src.encode())
         self.assertEqual(len(found), 0)
 
-    def test_find_typical_slashstarstar_multiline_comment_inline_def(self):
+    def test_documented_starstar(self):
         src = """\
         /**
         * docs for this inline function!
@@ -119,8 +117,8 @@ class TestUncommentedInlineFuncDefNegative(unittest.TestCase):
         self.assertEqual(len(found), 0)
 
 
-class TestUncommentedMacroFunctionPositive(unittest.TestCase):
-    def test_find_macro_function_without_docs(self):
+class PreprocMacroFunctions(unittest.TestCase):
+    def test_undocumented(self):
         src = """\
         #define MY_FUNC(x) ((x) * 2)
         """
@@ -128,9 +126,7 @@ class TestUncommentedMacroFunctionPositive(unittest.TestCase):
         self.assertEqual(len(found), 1)
         self.assertIn("MY_FUNC", found[0].source)
 
-
-class TestUncommentedMacroFunctionNegative(unittest.TestCase):
-    def test_find_macro_function_without_docs(self):
+    def test_documented_starstar(self):
         src = """\
         /** This function macro does the thing!*/
         #define MY_MACRO_FUNC(x) ((x) * 2)
@@ -140,6 +136,8 @@ class TestUncommentedMacroFunctionNegative(unittest.TestCase):
 
 
 class CppClassMembers(unittest.TestCase):
+    # Decision: allow undocumented private members. Since I only care about the public API.
+
     def test_undocumented_public_method_decl(self):
         src = """\
         class MyClass {
