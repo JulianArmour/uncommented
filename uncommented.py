@@ -5,7 +5,7 @@
 from typing import NamedTuple
 import tree_sitter_cpp as tscpp
 from argparse import ArgumentParser
-from tree_sitter import Language, Parser, Query, QueryCursor
+from tree_sitter import Language, Node, Parser, Query, QueryCursor
 
 
 _cpp_lang = Language(tscpp.language())
@@ -40,21 +40,40 @@ def find(sourcecode: bytes) -> list[UncommentedDeclaration]:
     for matches in qc.matches(tree.root_node):
         _, captures = matches
         assert len(captures) == 1, "Only 1 capture per pattern is supported."
-        _, nodes = next(iter(captures.items()))
-        func_decl = nodes[0]  # there can only be one
-        previous_node = func_decl.prev_named_sibling
+        cap_name, nodes = next(iter(captures.items()))
+        node_of_interest = nodes[0]  # there can only be one
+        if skip_this_node(cap_name, node_of_interest):
+            continue
+        previous_node = node_of_interest.prev_named_sibling
         if (
             previous_node is None
             or previous_node.type != "comment"
-            or previous_node.end_point.row + 1 != func_decl.start_point.row
+            or previous_node.end_point.row + 1 != node_of_interest.start_point.row
         ):
-            assert func_decl.text is not None
+            assert node_of_interest.text is not None
             found.append(
                 UncommentedDeclaration(
-                    func_decl.start_point.row, func_decl.text.decode()
+                    node_of_interest.start_point.row, node_of_interest.text.decode()
                 )
             )
     return found
+
+
+def skip_this_node(capture_name: str, node: Node) -> bool:
+    """
+    Tree-sitter queries are powerful but cannot handle all situations. This function
+    applies ad-hoc checks to captured nodes to indicate if we don't care about this node.
+    This keeps the queries very simple. Useful for annoying C++ parsing.
+    """
+    # only handle public members in classes
+    if capture_name == "function.member_declaration":
+        cur_node = node
+        while (cur_node := cur_node.prev_named_sibling) is not None:
+            if cur_node.type == "access_specifier":
+                return cur_node.text == b"private"
+        return True  # class members are private by default
+
+    return False
 
 
 def main():

@@ -151,6 +151,34 @@ class CppClassMembers(unittest.TestCase):
         self.assertEqual(len(found), 1)
         self.assertIn("undocumented_method", found[0].source)
 
+    def test_undocumented_private_member_function_decl(self):
+        src = """\
+        class MyClass {
+        private:
+            void undocumented_private_method();
+        };
+        """
+        found = uncommented.find(src.encode())
+        self.assertEqual(len(found), 0)
+
+    def test_undocumented_public_and_private_method_decl(self):
+        src = """\
+        class MyClass {
+        public:
+            void undocumented_public_method();
+        private:
+            void undocumented_private_method();
+        public:
+            void another_undocumented_public_method();
+        private:
+            void another_undocumented_private_method();
+        };
+        """
+        found = uncommented.find(src.encode())
+        self.assertEqual(len(found), 2)
+        self.assertIn("undocumented_public_method", found[0].source)
+        self.assertIn("another_undocumented_public_method", found[1].source)
+
     def test_documented_public_method_decl(self):
         src = """\
         class MyClass {
