@@ -11,7 +11,7 @@ The intent is to run this on header files.
 ### C++
 - [x] C++ member functions (Methods)
     - [x] public member declarations
-    - [ ] protected member declarations
+    - [x] protected member declarations
 - [ ] C++ class declarations (https://www.cppreference.com/w/cpp/language/class.html)
 
 ### Preprocessor

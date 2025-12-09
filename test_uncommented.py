@@ -182,6 +182,45 @@ class CppClassMembers(unittest.TestCase):
         found = uncommented.find(src.encode())
         self.assertEqual(len(found), 0)
 
+    def test_undocumented_protected_method_decl(self):
+        src = """\
+        class MyClass {
+        protected:
+            void undocumented_protected_method();
+        };
+        """
+        found = uncommented.find(src.encode())
+        self.assertEqual(len(found), 1)
+        self.assertIn("undocumented_protected_method", found[0].source)
+
+    def test_documented_protected_method_decl(self):
+        src = """\
+        class MyClass {
+        protected:
+            /// This is documented
+            void documented_protected_method();
+        };
+        """
+        found = uncommented.find(src.encode())
+        self.assertEqual(len(found), 0)
+
+    def test_public_and_protected_method_decls(self):
+        src = """\
+        class MyClass {
+        public:
+            void undocumented_public_method();
+        protected:
+            void undocumented_protected_method();
+        public:
+            void another_undocumented_public_method();
+        };
+        """
+        found = uncommented.find(src.encode())
+        self.assertEqual(len(found), 3)
+        self.assertIn("undocumented_public_method", found[0].source)
+        self.assertIn("undocumented_protected_method", found[1].source)
+        self.assertIn("another_undocumented_public_method", found[2].source)
+
 
 if __name__ == "__main__":
     unittest.main()
