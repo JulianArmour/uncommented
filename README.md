@@ -6,7 +6,7 @@ The intent is to run this on header files.
 ### C
 - [x] C function declarations
 - [x] C inline functions definitions
-- [ ] C structs with function pointer members
+- [x] C structs with function pointer members
 
 ### C++
 - [x] C++ member functions (Methods)

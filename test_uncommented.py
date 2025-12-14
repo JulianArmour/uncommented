@@ -129,6 +129,51 @@ class PreprocMacroFunctions(unittest.TestCase):
         self.assertEqual(len(found), 0)
 
 
+class StructFunctionPointerMembers(unittest.TestCase):
+    def test_undocumented_function_pointer_member(self):
+        src = """\
+        struct Ops {
+            int (*do_it)(int a);
+        };
+        """
+        found = uncommented.find(src.encode())
+        self.assertEqual(len(found), 1)
+        self.assertIn("do_it", found[0].source)
+
+    def test_documented_function_pointer_member_with_line_comment(self):
+        src = """\
+        struct Ops {
+            /// docs for do_it
+            int (*do_it)(int a);
+        };
+        """
+        found = uncommented.find(src.encode())
+        self.assertEqual(len(found), 0)
+
+    def test_documented_function_pointer_member_with_block_comment(self):
+        src = """\
+        struct Ops {
+            /**
+             * docs for cb
+             */
+            void (*cb)(void);
+        };
+        """
+        found = uncommented.find(src.encode())
+        self.assertEqual(len(found), 0)
+
+    def test_ignores_non_function_pointer_fields(self):
+        src = """\
+        struct Ops {
+            int count;
+            int (*do_it)(int a);
+        };
+        """
+        found = uncommented.find(src.encode())
+        self.assertEqual(len(found), 1)
+        self.assertIn("do_it", found[0].source)
+
+
 class CppClassMembers(unittest.TestCase):
     # Decision: allow undocumented private members. Since I only care about the public API.
 

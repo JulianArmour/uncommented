@@ -17,7 +17,13 @@ _query = Query(
 
     (function_definition (storage_class_specifier "inline")) @function.definition.inline
 
-    (field_declaration (function_declarator)) @function.member_declaration
+    (field_declaration
+        declarator: (function_declarator
+            declarator: (field_identifier))) @function.member_declaration
+
+    (field_declaration
+        declarator: (function_declarator
+            declarator: (parenthesized_declarator (pointer_declarator)))) @struct.funcptr_member
 
     (preproc_function_def) @macro.func_def
     """,
