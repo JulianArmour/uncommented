@@ -25,6 +25,27 @@ _query = Query(
         declarator: (function_declarator
             declarator: (parenthesized_declarator (pointer_declarator)))) @struct.funcptr_member
 
+    (class_specifier
+        name: (type_identifier)) @class.declaration
+
+    (struct_specifier
+        name: (type_identifier)) @struct.declaration
+
+    (union_specifier
+        name: (type_identifier)) @union.declaration
+
+    (template_declaration
+        (class_specifier
+            name: (type_identifier))) @class.template_declaration
+
+    (template_declaration
+        (struct_specifier
+            name: (type_identifier))) @struct.template_declaration
+
+    (template_declaration
+        (union_specifier
+            name: (type_identifier))) @union.template_declaration
+
     (preproc_function_def) @macro.func_def
     """,
 )
@@ -71,6 +92,33 @@ def skip_this_node(capture_name: str, node: Node) -> bool:
     applies ad-hoc checks to captured nodes to indicate if we don't care about this node.
     This keeps the queries very simple. Useful for annoying C++ parsing.
     """
+    class_like_caps = {
+        "class.declaration",
+        "struct.declaration",
+        "union.declaration",
+        "class.template_declaration",
+        "struct.template_declaration",
+        "union.template_declaration",
+    }
+    template_caps = {
+        "class.template_declaration",
+        "struct.template_declaration",
+        "union.template_declaration",
+    }
+    if capture_name in class_like_caps:
+        cur_node = node
+        while cur_node is not None:
+            if cur_node.type == "friend_declaration":
+                return True
+            if (
+                cur_node.type == "template_declaration"
+                and capture_name not in template_caps
+            ):
+                # Template variants are captured separately; skip the inner capture.
+                return True
+            cur_node = cur_node.parent
+        return False
+
     # only handle public members in classes
     if capture_name == "function.member_declaration":
         cur_node = node

@@ -132,6 +132,7 @@ class PreprocMacroFunctions(unittest.TestCase):
 class StructFunctionPointerMembers(unittest.TestCase):
     def test_undocumented_function_pointer_member(self):
         src = """\
+        /// docs for Ops
         struct Ops {
             int (*do_it)(int a);
         };
@@ -142,6 +143,7 @@ class StructFunctionPointerMembers(unittest.TestCase):
 
     def test_documented_function_pointer_member_with_line_comment(self):
         src = """\
+        /// docs for Ops
         struct Ops {
             /// docs for do_it
             int (*do_it)(int a);
@@ -152,6 +154,7 @@ class StructFunctionPointerMembers(unittest.TestCase):
 
     def test_documented_function_pointer_member_with_block_comment(self):
         src = """\
+        /// docs for Ops
         struct Ops {
             /**
              * docs for cb
@@ -164,6 +167,7 @@ class StructFunctionPointerMembers(unittest.TestCase):
 
     def test_ignores_non_function_pointer_fields(self):
         src = """\
+        /// docs for Ops
         struct Ops {
             int count;
             int (*do_it)(int a);
@@ -174,11 +178,94 @@ class StructFunctionPointerMembers(unittest.TestCase):
         self.assertIn("do_it", found[0].source)
 
 
+class CppClassDeclarations(unittest.TestCase):
+    def test_undocumented_class_definition(self):
+        src = """\
+        class MyClass {};
+        """
+        found = uncommented.find(src.encode())
+        self.assertEqual(len(found), 1)
+        self.assertIn("MyClass", found[0].source)
+
+    def test_documented_class_definition(self):
+        src = """\
+        /// docs for MyClass
+        class MyClass {};
+        """
+        found = uncommented.find(src.encode())
+        self.assertEqual(len(found), 0)
+
+    def test_undocumented_class_forward_declaration(self):
+        src = """\
+        class ForwardDecl;
+        """
+        found = uncommented.find(src.encode())
+        self.assertEqual(len(found), 1)
+        self.assertIn("ForwardDecl", found[0].source)
+
+    def test_documented_class_forward_declaration(self):
+        src = """\
+        // docs for ForwardDecl
+        class ForwardDecl;
+        """
+        found = uncommented.find(src.encode())
+        self.assertEqual(len(found), 0)
+
+    def test_struct_and_union_definitions(self):
+        src = """\
+        struct Data { int x; };
+        union Value { int i; float f; };
+        """
+        found = uncommented.find(src.encode())
+        self.assertEqual(len(found), 2)
+        self.assertIn("Data", found[0].source)
+        self.assertIn("Value", found[1].source)
+
+    def test_template_class_forward_declaration(self):
+        src = """\
+        template <typename T>
+        class Box;
+        """
+        found = uncommented.find(src.encode())
+        self.assertEqual(len(found), 1)
+        self.assertIn("Box", found[0].source)
+
+    def test_documented_template_class_forward_declaration(self):
+        src = """\
+        /// docs for Box
+        template <typename T>
+        class Box;
+        """
+        found = uncommented.find(src.encode())
+        self.assertEqual(len(found), 0)
+
+    def test_anonymous_struct_not_reported(self):
+        src = """\
+        struct {
+            int x;
+        } anon;
+        """
+        found = uncommented.find(src.encode())
+        self.assertEqual(len(found), 0)
+
+    def test_friend_class_declaration_is_skipped(self):
+        src = """\
+        /// docs for Owner
+        class Owner {
+        public:
+            friend class Pal;
+        };
+        """
+        found = uncommented.find(src.encode())
+        self.assertEqual(len(found), 0)
+
+
 class CppClassMembers(unittest.TestCase):
     # Decision: allow undocumented private members. Since I only care about the public API.
 
     def test_undocumented_public_method_decl(self):
         src = """\
+        /// docs for MyClass
         class MyClass {
         public:
             void undocumented_method();
@@ -190,6 +277,7 @@ class CppClassMembers(unittest.TestCase):
 
     def test_undocumented_private_member_function_decl(self):
         src = """\
+        /// docs for MyClass
         class MyClass {
         private:
             void undocumented_private_method();
@@ -200,6 +288,7 @@ class CppClassMembers(unittest.TestCase):
 
     def test_undocumented_public_and_private_method_decl(self):
         src = """\
+        /// docs for MyClass
         class MyClass {
         public:
             void undocumented_public_method();
@@ -218,6 +307,7 @@ class CppClassMembers(unittest.TestCase):
 
     def test_documented_public_method_decl(self):
         src = """\
+        /// docs for MyClass
         class MyClass {
         public:
             /// This is documented
@@ -229,6 +319,7 @@ class CppClassMembers(unittest.TestCase):
 
     def test_undocumented_protected_method_decl(self):
         src = """\
+        /// docs for MyClass
         class MyClass {
         protected:
             void undocumented_protected_method();
@@ -240,6 +331,7 @@ class CppClassMembers(unittest.TestCase):
 
     def test_documented_protected_method_decl(self):
         src = """\
+        /// docs for MyClass
         class MyClass {
         protected:
             /// This is documented
@@ -251,6 +343,7 @@ class CppClassMembers(unittest.TestCase):
 
     def test_public_and_protected_method_decls(self):
         src = """\
+        /// docs for MyClass
         class MyClass {
         public:
             void undocumented_public_method();
