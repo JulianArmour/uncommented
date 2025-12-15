@@ -26,25 +26,31 @@ _query = Query(
             declarator: (parenthesized_declarator (pointer_declarator)))) @struct.funcptr_member
 
     (class_specifier
-        name: (type_identifier)) @class.declaration
+        name: (type_identifier)
+        body: (field_declaration_list)) @class.declaration
 
     (struct_specifier
-        name: (type_identifier)) @struct.declaration
+        name: (type_identifier)
+        body: (field_declaration_list)) @struct.declaration
 
     (union_specifier
-        name: (type_identifier)) @union.declaration
+        name: (type_identifier)
+        body: (field_declaration_list)) @union.declaration
 
     (template_declaration
         (class_specifier
-            name: (type_identifier))) @class.template_declaration
+            name: (type_identifier)
+            body: (field_declaration_list))) @class.template_declaration
 
     (template_declaration
         (struct_specifier
-            name: (type_identifier))) @struct.template_declaration
+            name: (type_identifier)
+            body: (field_declaration_list))) @struct.template_declaration
 
     (template_declaration
         (union_specifier
-            name: (type_identifier))) @union.template_declaration
+            name: (type_identifier)
+            body: (field_declaration_list))) @union.template_declaration
 
     (preproc_function_def) @macro.func_def
     """,
@@ -96,28 +102,13 @@ def skip_this_node(capture_name: str, node: Node) -> bool:
         "class.declaration",
         "struct.declaration",
         "union.declaration",
-        "class.template_declaration",
-        "struct.template_declaration",
-        "union.template_declaration",
-    }
-    template_caps = {
-        "class.template_declaration",
-        "struct.template_declaration",
-        "union.template_declaration",
     }
     if capture_name in class_like_caps:
         cur_node = node
         while cur_node is not None:
-            if cur_node.type == "friend_declaration":
-                return True
-            if (
-                cur_node.type == "template_declaration"
-                and capture_name not in template_caps
-            ):
-                # Template variants are captured separately; skip the inner capture.
-                return True
+            if cur_node.type == "template_declaration":
+                return True  # Templates have their own capture
             cur_node = cur_node.parent
-        return False
 
     # only handle public members in classes
     if capture_name == "function.member_declaration":

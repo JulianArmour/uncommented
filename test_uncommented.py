@@ -196,30 +196,48 @@ class CppClassDeclarations(unittest.TestCase):
         self.assertEqual(len(found), 0)
 
     def test_undocumented_class_forward_declaration(self):
-        src = """\
-        class ForwardDecl;
         """
-        found = uncommented.find(src.encode())
-        self.assertEqual(len(found), 1)
-        self.assertIn("ForwardDecl", found[0].source)
-
-    def test_documented_class_forward_declaration(self):
+        Forward Decls are OK. We just care about the definitions.
+        Let's assert that.
+        """
         src = """\
-        // docs for ForwardDecl
         class ForwardDecl;
         """
         found = uncommented.find(src.encode())
         self.assertEqual(len(found), 0)
 
-    def test_struct_and_union_definitions(self):
+    def test_undocumented_union_definitions(self):
         src = """\
-        struct Data { int x; };
         union Value { int i; float f; };
         """
         found = uncommented.find(src.encode())
-        self.assertEqual(len(found), 2)
+        self.assertEqual(len(found), 1)
+
+    def test_union_definitions(self):
+        src = """\
+        // Docs for Value
+        union Value { int i; float f; };
+        """
+        found = uncommented.find(src.encode())
+        self.assertEqual(len(found), 0)
+
+    def test_undocumented_struct_definitions(self):
+        src = """\
+        struct Data { int x; };
+        """
+        found = uncommented.find(src.encode())
+        self.assertEqual(len(found), 1)
         self.assertIn("Data", found[0].source)
-        self.assertIn("Value", found[1].source)
+
+    def test_struct_definitions(self):
+        src = """\
+        /**
+        * docs for Data
+        */
+        struct Data { int x; };
+        """
+        found = uncommented.find(src.encode())
+        self.assertEqual(len(found), 0)
 
     def test_template_class_forward_declaration(self):
         src = """\
@@ -227,14 +245,22 @@ class CppClassDeclarations(unittest.TestCase):
         class Box;
         """
         found = uncommented.find(src.encode())
+        self.assertEqual(len(found), 0)
+
+    def test_undocumented_template_class_definition(self):
+        src = """\
+        template <typename T>
+        class Box {};
+        """
+        found = uncommented.find(src.encode())
         self.assertEqual(len(found), 1)
         self.assertIn("Box", found[0].source)
 
-    def test_documented_template_class_forward_declaration(self):
+    def test_documented_template_class_definition(self):
         src = """\
         /// docs for Box
         template <typename T>
-        class Box;
+        class Box {};
         """
         found = uncommented.find(src.encode())
         self.assertEqual(len(found), 0)

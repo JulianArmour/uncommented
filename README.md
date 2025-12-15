@@ -12,7 +12,7 @@ The intent is to run this on header files.
 - [x] C++ member functions (Methods)
     - [x] public member declarations
     - [x] protected member declarations
-- [x] C++ class/struct/union declarations (including templated forms)
+ - [x] C++ class/struct/union definitions (including templated forms)
 
 ### Preprocessor
 - [x] Preprocessor macros
