@@ -1,5 +1,5 @@
 #!/bin/env python3
-# This program finds and displays uncommented/undocumented function declarations.
+# This program finds and displays uncommented/undocumented declarations/definitions.
 # It's useful for automated tools to block merges of undocumented APIs in header files.
 
 from typing import NamedTuple

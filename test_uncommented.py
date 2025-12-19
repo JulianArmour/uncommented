@@ -178,7 +178,7 @@ class StructFunctionPointerMembers(unittest.TestCase):
         self.assertIn("do_it", found[0].source)
 
 
-class CppClassDeclarations(unittest.TestCase):
+class CppClassDefinitions(unittest.TestCase):
     def test_undocumented_class_definition(self):
         src = """\
         class MyClass {};
@@ -239,6 +239,47 @@ class CppClassDeclarations(unittest.TestCase):
         found = uncommented.find(src.encode())
         self.assertEqual(len(found), 0)
 
+    def test_undocumented_template_class_definition(self):
+        src = """\
+        template <typename T>
+        class Box { T value; };
+        """
+        found = uncommented.find(src.encode())
+        self.assertEqual(len(found), 1)
+        self.assertIn("Box", found[0].source)
+
+    def test_documented_template_struct_definition(self):
+        src = """\
+        /// docs for Holder
+        template <typename T>
+        struct Holder { T value; };
+        """
+        found = uncommented.find(src.encode())
+        self.assertEqual(len(found), 0)
+
+    def test_ignores_anonymous_struct_definition(self):
+        src = """\
+        struct { int x; } anon;
+        """
+        found = uncommented.find(src.encode())
+        self.assertEqual(len(found), 0)
+
+    def test_undocumented_typedef_struct_definition(self):
+        src = """\
+        typedef struct DataTag { int x; } Data;
+        """
+        found = uncommented.find(src.encode())
+        self.assertEqual(len(found), 1)
+        self.assertIn("DataTag", found[0].source)
+
+    def test_documented_typedef_struct_definition(self):
+        src = """\
+        // some docs
+        typedef struct DataTag { int x; } Data;
+        """
+        found = uncommented.find(src.encode())
+        self.assertEqual(len(found), 0)
+
     def test_template_class_forward_declaration(self):
         src = """\
         template <typename T>
@@ -246,15 +287,6 @@ class CppClassDeclarations(unittest.TestCase):
         """
         found = uncommented.find(src.encode())
         self.assertEqual(len(found), 0)
-
-    def test_undocumented_template_class_definition(self):
-        src = """\
-        template <typename T>
-        class Box {};
-        """
-        found = uncommented.find(src.encode())
-        self.assertEqual(len(found), 1)
-        self.assertIn("Box", found[0].source)
 
     def test_documented_template_class_definition(self):
         src = """\
