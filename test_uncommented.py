@@ -206,6 +206,14 @@ class CppClassDefinitions(unittest.TestCase):
         found = uncommented.find(src.encode())
         self.assertEqual(len(found), 0)
 
+    def test_documented_class_forward_declaration(self):
+        src = """\
+        /// docs for ForwardDecl
+        class ForwardDecl;
+        """
+        found = uncommented.find(src.encode())
+        self.assertEqual(len(found), 0)
+
     def test_undocumented_union_definitions(self):
         src = """\
         union Value { int i; float f; };
@@ -376,6 +384,18 @@ class CppClassMembers(unittest.TestCase):
         found = uncommented.find(src.encode())
         self.assertEqual(len(found), 0)
 
+    def test_documented_private_member_function_decl(self):
+        src = """\
+        /// docs for MyClass
+        class MyClass {
+        private:
+            /// This is documented
+            void documented_private_method();
+        };
+        """
+        found = uncommented.find(src.encode())
+        self.assertEqual(len(found), 0)
+
     def test_undocumented_public_and_private_method_decl(self):
         src = """\
         /// docs for MyClass
@@ -394,6 +414,25 @@ class CppClassMembers(unittest.TestCase):
         self.assertEqual(len(found), 2)
         self.assertIn("undocumented_public_method", found[0].source)
         self.assertIn("another_undocumented_public_method", found[1].source)
+
+    def test_documented_public_and_private_method_decl(self):
+        src = """\
+        /// docs for MyClass
+        class MyClass {
+        public:
+            /// This is documented
+            void documented_public_method();
+        private:
+            void undocumented_private_method();
+        public:
+            /// This is documented
+            void another_documented_public_method();
+        private:
+            void another_undocumented_private_method();
+        };
+        """
+        found = uncommented.find(src.encode())
+        self.assertEqual(len(found), 0)
 
     def test_documented_public_method_decl(self):
         src = """\
@@ -503,6 +542,24 @@ class CppClassMembers(unittest.TestCase):
         self.assertTrue(any("operator==" in item.source for item in found))
         self.assertEqual(len(found), 4)
 
+    def test_documented_constructors_destructors_operators_defs(self):
+        src = """\
+        /// docs for MyClass
+        class MyClass {
+        public:
+            //a
+            MyClass() {}
+            //a
+            ~MyClass() {}
+            //a
+            MyClass& operator=(const MyClass&) { return *this; }
+            //a
+            bool operator==(const MyClass&) const { return true; }
+        };
+        """
+        found = uncommented.find(src.encode())
+        self.assertEqual(len(found), 0)
+
 
 class FreeOperators(unittest.TestCase):
     def test_undocumented_free_operator_declaration(self):
@@ -513,6 +570,14 @@ class FreeOperators(unittest.TestCase):
         self.assertEqual(len(found), 1)
         self.assertIn("operator==", found[0].source)
 
+    def test_documented_free_operator_declaration(self):
+        src = """\
+        /// equality
+        bool operator==(int a, int b);
+        """
+        found = uncommented.find(src.encode())
+        self.assertEqual(len(found), 0)
+
     def test_undocumented_free_operator_definition(self):
         src = """\
         bool operator==(int a, int b) { return a == b; }
@@ -520,6 +585,14 @@ class FreeOperators(unittest.TestCase):
         found = uncommented.find(src.encode())
         self.assertEqual(len(found), 1)
         self.assertIn("operator==", found[0].source)
+
+    def test_documented_free_operator_definition(self):
+        src = """\
+        /// equality
+        bool operator==(int a, int b) { return a == b; }
+        """
+        found = uncommented.find(src.encode())
+        self.assertEqual(len(found), 0)
 
 
 if __name__ == "__main__":
