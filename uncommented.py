@@ -2,7 +2,7 @@
 # This program finds and displays uncommented/undocumented declarations/definitions.
 # It's useful for automated tools to block merges of undocumented APIs in header files.
 
-from typing import NamedTuple
+from typing import NamedTuple, Tuple
 import tree_sitter_cpp as tscpp
 from argparse import ArgumentParser
 from tree_sitter import Language, Node, Parser, Query, QueryCursor
@@ -20,6 +20,29 @@ _query = Query(
     (field_declaration
         declarator: (function_declarator
             declarator: (field_identifier))) @function.member_declaration
+
+    (field_declaration
+        declarator: (function_declarator
+            declarator: (operator_name))) @function.operator_declaration
+    (field_declaration
+        declarator: (reference_declarator
+            (function_declarator
+                declarator: (operator_name)))) @function.refoperator_declaration
+
+    (class_specifier
+        body: (field_declaration_list
+            (function_definition
+                declarator: (function_declarator
+                    declarator: [(identifier)(destructor_name)])) @function.con_des_structor_definition))
+
+    (function_definition
+        declarator: (function_declarator
+            declarator: (operator_name))) @function.operator_definition
+
+    (function_definition
+        declarator: (reference_declarator
+            (function_declarator
+                declarator: (operator_name)))) @function.refoperator_definition
 
     (field_declaration
         declarator: (function_declarator
@@ -130,15 +153,25 @@ def skip_this_node(capture_name: str, node: Node) -> bool:
                 return True  # Templates have their own capture
             cur_node = cur_node.parent
 
-    # only handle public members in classes
-    if capture_name == "function.member_declaration":
+    # skip private members
+    it_is, the_type = is_in_user_type(node)
+    if it_is:
         cur_node = node
         while (cur_node := cur_node.prev_named_sibling) is not None:
             if cur_node.type == "access_specifier":
                 return cur_node.text == b"private"
-        return True  # class members are private by default
+        return the_type == "class_specifier"  # class members are private by default
 
     return False
+
+
+def is_in_user_type(node: Node) -> Tuple[bool, str]:
+    cur_node = node.parent
+    while cur_node is not None:
+        if cur_node.type in {"class_specifier", "struct_specifier", "union_specifier"}:
+            return True, cur_node.type
+        cur_node = cur_node.parent
+    return False, ""
 
 
 def main():

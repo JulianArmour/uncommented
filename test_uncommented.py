@@ -342,12 +342,12 @@ class CppClassDefinitions(unittest.TestCase):
         struct { int x; } anon;
         """
         found = uncommented.find(src.encode())
-        self.assertEqual(len(found), 5)
         self.assertTrue(any("UndocClass" in item.source for item in found))
         self.assertTrue(any("UndocStruct" in item.source for item in found))
         self.assertTrue(any("UndocUnion" in item.source for item in found))
         self.assertTrue(any("UndocBox" in item.source for item in found))
         self.assertTrue(any("UndocTag" in item.source for item in found))
+        self.assertEqual(len(found), 5)
 
 
 class CppClassMembers(unittest.TestCase):
@@ -448,6 +448,78 @@ class CppClassMembers(unittest.TestCase):
         self.assertIn("undocumented_public_method", found[0].source)
         self.assertIn("undocumented_protected_method", found[1].source)
         self.assertIn("another_undocumented_public_method", found[2].source)
+
+    def test_undocumented_constructors_destructors_operators_decls(self):
+        src = """\
+        /// docs for MyClass
+        class MyClass {
+        public:
+            MyClass();
+            ~MyClass();
+            MyClass& operator+=(const MyClass&);
+            bool operator==(const MyClass&) const;
+        };
+        """
+        found = uncommented.find(src.encode())
+        self.assertTrue(any("MyClass();" in item.source and "~" not in item.source for item in found))
+        self.assertTrue(any("~MyClass();" in item.source for item in found))
+        self.assertTrue(any("operator+=" in item.source for item in found))
+        self.assertTrue(any("operator==" in item.source for item in found))
+        self.assertEqual(len(found), 4)
+
+    def test_documented_constructors_destructors_operators_decls(self):
+        src = """\
+        /// docs for MyClass
+        class MyClass {
+        public:
+            //a
+            MyClass();
+            //a
+            ~MyClass();
+            //a
+            MyClass& operator+=(const MyClass&);
+            //a
+            bool operator==(const MyClass&) const;
+        };
+        """
+        found = uncommented.find(src.encode())
+        self.assertEqual(len(found), 0)
+
+    def test_constructors_destructors_operators_defs(self):
+        src = """\
+        /// docs for MyClass
+        class MyClass {
+        public:
+            MyClass() {}
+            ~MyClass() {}
+            MyClass& operator=(const MyClass&) { return *this; }
+            bool operator==(const MyClass&) const { return true; }
+        };
+        """
+        found = uncommented.find(src.encode())
+        self.assertTrue(any("MyClass()" in item.source for item in found))
+        self.assertTrue(any("~MyClass()" in item.source for item in found))
+        self.assertTrue(any("operator=" in item.source for item in found))
+        self.assertTrue(any("operator==" in item.source for item in found))
+        self.assertEqual(len(found), 4)
+
+
+class FreeOperators(unittest.TestCase):
+    def test_undocumented_free_operator_declaration(self):
+        src = """\
+        bool operator==(int a, int b);
+        """
+        found = uncommented.find(src.encode())
+        self.assertEqual(len(found), 1)
+        self.assertIn("operator==", found[0].source)
+
+    def test_undocumented_free_operator_definition(self):
+        src = """\
+        bool operator==(int a, int b) { return a == b; }
+        """
+        found = uncommented.find(src.encode())
+        self.assertEqual(len(found), 1)
+        self.assertIn("operator==", found[0].source)
 
 
 if __name__ == "__main__":
