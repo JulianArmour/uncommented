@@ -317,6 +317,38 @@ class CppClassDefinitions(unittest.TestCase):
         found = uncommented.find(src.encode())
         self.assertEqual(len(found), 0)
 
+    def test_combined_class_definitions_and_declarations(self):
+        src = """\
+        /// docs for DocClass
+        class DocClass {};
+        class UndocClass {};
+        class ForwardDecl;
+        /// docs for DocStruct
+        struct DocStruct { int x; };
+        struct UndocStruct { int y; };
+        // docs for DocUnion
+        union DocUnion { int i; float f; };
+        union UndocUnion { int i; float f; };
+        template <typename T>
+        class Box;
+        template <typename T>
+        class UndocBox { T value; };
+        /// docs for Holder
+        template <typename T>
+        struct Holder { T value; };
+        // docs for DataTag
+        typedef struct DataTag { int x; } Data;
+        typedef struct UndocTag { int x; } Undoc;
+        struct { int x; } anon;
+        """
+        found = uncommented.find(src.encode())
+        self.assertEqual(len(found), 5)
+        self.assertTrue(any("UndocClass" in item.source for item in found))
+        self.assertTrue(any("UndocStruct" in item.source for item in found))
+        self.assertTrue(any("UndocUnion" in item.source for item in found))
+        self.assertTrue(any("UndocBox" in item.source for item in found))
+        self.assertTrue(any("UndocTag" in item.source for item in found))
+
 
 class CppClassMembers(unittest.TestCase):
     # Decision: allow undocumented private members. Since I only care about the public API.

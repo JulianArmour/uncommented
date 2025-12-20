@@ -77,12 +77,7 @@ def find(sourcecode: bytes) -> list[UncommentedDeclaration]:
         node_of_interest = nodes[0]  # there can only be one
         if skip_this_node(cap_name, node_of_interest):
             continue
-        previous_node = node_of_interest.prev_named_sibling
-        if (
-            previous_node is None
-            or previous_node.type != "comment"
-            or previous_node.end_point.row + 1 != node_of_interest.start_point.row
-        ):
+        if not has_adjacent_comment(node_of_interest):
             assert node_of_interest.text is not None
             found.append(
                 UncommentedDeclaration(
@@ -90,6 +85,31 @@ def find(sourcecode: bytes) -> list[UncommentedDeclaration]:
                 )
             )
     return found
+
+
+def has_adjacent_comment(node: Node) -> bool:
+    """
+    Returns True when an adjacent comment documents the node.
+    Handles typedef struct/union/class definitions where the comment precedes
+    the typedef, not the struct/union/class specifier itself.
+    """
+    previous_node = node.prev_named_sibling
+    if (
+        previous_node is not None
+        and previous_node.type == "comment"
+        and previous_node.end_point.row + 1 == node.start_point.row
+    ):
+        return True
+    # deal with typedefs
+    parent = node.parent
+    if parent is None or parent.type != "type_definition":
+        return False
+    parent_prev_node = parent.prev_named_sibling
+    return (
+        parent_prev_node is not None
+        and parent_prev_node.type == "comment"
+        and parent_prev_node.end_point.row + 1 == parent.start_point.row
+    )
 
 
 def skip_this_node(capture_name: str, node: Node) -> bool:
