@@ -5,7 +5,7 @@
 from typing import NamedTuple, Tuple
 import tree_sitter_cpp as tscpp
 from argparse import ArgumentParser
-from tree_sitter import Language, Node, Parser, Query, QueryCursor
+from tree_sitter import Language, Node, Parser, Query, QueryCursor, Tree
 
 
 _cpp_lang = Language(tscpp.language())
@@ -85,12 +85,43 @@ class UncommentedDeclaration(NamedTuple):
     source: str
 
 
+def findFunctionDeclarations(tree: Tree):
+    qc = QueryCursor(
+        Query(
+            _cpp_lang,
+            """
+        (translation_unit
+            (declaration (function_declarator)) @function.declaration)
+        (namespace_definition
+          body: (declaration_list 
+            (declaration (function_declarator)) @function.declaration))
+        """,
+        )
+    )
+    return [
+        c
+        for _, capture in qc.matches(tree.root_node)
+        for c in capture["function.declaration"]
+    ]
+
+
 def find(sourcecode: bytes) -> list[UncommentedDeclaration]:
     """
     Finds uncommented/undocumented function declarations.
     Returns a list of undocumented declarations
     """
+    found = []
     tree = _parser.parse(sourcecode)
+    nodes = findFunctionDeclarations(tree)
+    for node in nodes:
+        if not has_adjacent_comment(node):
+            assert node.text is not None
+            found.append(
+                UncommentedDeclaration(node.start_point.row, node.text.decode())
+            )
+
+    return found
+
     found = []
     qc = QueryCursor(_query)
     for matches in qc.matches(tree.root_node):
