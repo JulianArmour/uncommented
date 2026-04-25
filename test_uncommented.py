@@ -546,6 +546,41 @@ class CppClassMembers(unittest.TestCase):
         self.assertTrue(any("operator==" in item.source for item in found))
         self.assertEqual(len(found), 4)
 
+    def test_constructor_definition_with_initializer_list(self):
+        src = """\
+        /// docs for S
+        struct S {
+            int n;
+            S() : n(7) {}
+        };
+        """
+        found = uncommented.find(src.encode())
+        self.assertEqual(len(found), 1)
+        self.assertIn("S() : n(7)", found[0].source)
+
+    def test_documented_constructor_definition_with_initializer_list(self):
+        src = """\
+        /// docs for S
+        struct S {
+            int n;
+            /// docs for S
+            S() : n(7) {}
+        };
+        """
+        found = uncommented.find(src.encode())
+        self.assertEqual(len(found), 0)
+
+    def test_private_constructor_definition_is_ignored(self):
+        src = """\
+        /// docs for MyClass
+        class MyClass {
+        private:
+            MyClass() {}
+        };
+        """
+        found = uncommented.find(src.encode())
+        self.assertEqual(len(found), 0)
+
     def test_documented_constructors_destructors_operators_defs(self):
         src = """\
         /// docs for MyClass

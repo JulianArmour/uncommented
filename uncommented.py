@@ -157,22 +157,22 @@ def findUserTypeFunctionDeclarations(tree: Tree) -> list[Node]:
     )
 
 
-def findClassFunctionDefinitions(tree: Tree) -> list[Node]:
+def findMemberFunctionDefinitions(tree: Tree) -> list[Node]:
     """
-    Finds public/protected constructor/destructor definitions inside classes.
-    Example: class C { public: C() {} ~C() {} };
+    Finds public/protected non-operator member function definitions.
+    Example: class C { public: C() {} ~C() {} void method() {} };
     """
     return _public_or_protected_members(
         _query_nodes(
             tree,
             """
-            (class_specifier
-                body: (field_declaration_list
-                    (function_definition
-                        declarator: (function_declarator
-                            declarator: [(identifier)(destructor_name)])) @function.definition))
+            (field_declaration_list
+                (function_definition
+                    declarator: (function_declarator
+                        declarator: [(identifier) (destructor_name) (field_identifier)]))
+                    @function.member_definition)
             """,
-            "function.definition",
+            "function.member_definition",
         )
     )
 
@@ -384,7 +384,7 @@ def find(sourcecode: bytes) -> list[UncommentedDeclaration]:
         findMemberFunctionDeclarations,
         findMemberOperatorDeclarations,
         findUserTypeFunctionDeclarations,
-        findClassFunctionDefinitions,
+        findMemberFunctionDefinitions,
         findMemberOperatorDefinitions,
         findFreeOperatorDefinitions,
         findStructFunctionPointerMembers,
