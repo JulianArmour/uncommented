@@ -500,7 +500,11 @@ class CppClassMembers(unittest.TestCase):
         };
         """
         found = uncommented.find(src.encode())
-        self.assertTrue(any("MyClass();" in item.source and "~" not in item.source for item in found))
+        self.assertTrue(
+            any(
+                "MyClass();" in item.source and "~" not in item.source for item in found
+            )
+        )
         self.assertTrue(any("~MyClass();" in item.source for item in found))
         self.assertTrue(any("operator+=" in item.source for item in found))
         self.assertTrue(any("operator==" in item.source for item in found))
